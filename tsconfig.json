@@ -1,0 +1,16 @@
+{
+  "compilerOptions": {
+    "target": "ESNext", // Compile to the latest ECMAScript version
+    "module": "NodeNext", // Use ES modules (import/export syntax)
+    "outDir": "./dist", // Output compiled files to /dist
+    "rootDir": "./src", // Treat /src as the root for input files
+    "moduleResolution": "nodenext", // Resolve modules like Node.js (needed for compatibility)
+    "esModuleInterop": true, // Enable interop between CommonJS and ES modules
+    "strict": true, // Enable all strict type-checking options
+    "skipLibCheck": true, // Skip type checking of declaration files for speed
+    "forceConsistentCasingInFileNames": true, // Ensure consistent file name casing
+    "resolveJsonModule": true // Allow importing JSON files (optional but useful)
+  },
+  "include": ["src/**/*"], // Include all files in /src
+  "exclude": ["node_modules", "dist"] // Exclude these directories from compilation
+}

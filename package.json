@@ -1,0 +1,25 @@
+{
+  "name": "blogz-app",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx ./src/app.ts",
+    "build": "tsc",
+    "start": "node ./dist/app.js"
+  },
+  "devDependencies": {
+    "@types/cookie-parser": "^1.4.8",
+    "tsx": "^4.19.3",
+    "typescript": "^5.8.2"
+  },
+  "dependencies": {
+    "@prisma/client": "^6.4.1",
+    "@types/express": "^5.0.0",
+    "@types/node": "^22.13.9",
+    "cookie-parser": "^1.4.7",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "zod": "^3.24.2"
+  }
+}
