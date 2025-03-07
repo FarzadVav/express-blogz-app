@@ -1,10 +1,11 @@
 import { Router } from "express"
 
 import prisma from "../lib/db.js"
-import { signJWT, verifyJWT } from "../lib/jose.js"
+import { signJWT } from "../lib/jose.js"
 import { zodValidation } from "../lib/zodValidation.js"
 import { createUserSchema } from "../lib/zodSchemas.js"
 import { hashPassword, verifyPassword } from "../lib/crypto.js"
+import { authMiddleware } from "../middlewares/auth.middlewares.js"
 
 const authRouter = Router()
 
@@ -65,34 +66,8 @@ authRouter.post("/users", async (req, res) => {
   }
 })
 
-authRouter.get("/users/me", async (req, res) => {
-  const token = req.headers.authorization?.split(" ")[1]
-
-  if (!token) {
-    res.status(401).send({ message: "Token is not provided" })
-    return
-  }
-
-  const payload = await verifyJWT(token)
-
-  if (!payload) {
-    res.status(401).send({ message: "Token is invalid" })
-    return
-  }
-
-  const user = await prisma.users.findUnique({
-    where: { id: payload?.id },
-    select: {
-      id: true,
-      email: true,
-      name: true
-    }
-  })
-
-  if (!user) {
-    res.status(404).send({ message: "User not found" })
-    return
-  }
+authRouter.get("/users/me", authMiddleware, async (req, res) => {
+  const user = req.user
 
   res.send({ message: "User found", user })
 })
