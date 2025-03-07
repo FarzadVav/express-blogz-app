@@ -3,11 +3,10 @@ import express from "express";
 import cookieParser from "cookie-parser";
 
 import prisma from "./lib/db.js";
-import { hashPassword } from "./lib/crypto.js";
+import { hashPassword, verifyPassword } from "./lib/crypto.js";
 import { signJWT, verifyJWT } from "./lib/jose.js";
 import { zodValidation } from "./lib/zodValidation.js";
 import { createUserSchema } from "./lib/zodSchemas.js";
-import { TOKEN_CONFIGS } from "./configs/cookies.configs.js";
 
 // Definitions
 dotenv.config()
@@ -26,7 +25,7 @@ app.get("/", (_, res) => {
 })
 
 app.post("/users", async (req, res) => {
-  const { email, password, name } = req.body
+  const { email, password } = req.body
 
   const errors = zodValidation(createUserSchema, req.body)
 
@@ -36,14 +35,28 @@ app.post("/users", async (req, res) => {
   }
 
   try {
-    const { salt, hash } = hashPassword(password)
+    const isUserExists = await prisma.users.findUnique({
+      where: { email }
+    })
 
+    if (isUserExists) {
+      const passwordMatch = verifyPassword(password, isUserExists.password, isUserExists.passwordSalt)
+
+      if (!passwordMatch) {
+        res.send({ message: "Invalid password" }).status(400)
+        return
+      }
+
+      res.send({ message: "User already exists", user: isUserExists }).status(400)
+      return
+    }
+
+    const { salt, hash } = hashPassword(password)
     const user = await prisma.users.create({
       data: {
         email,
         password: hash,
         passwordSalt: salt,
-        name
       },
       select: {
         id: true,
@@ -54,19 +67,14 @@ app.post("/users", async (req, res) => {
 
     const token = await signJWT({ id: user.id })
 
-    res.cookie(TOKEN_CONFIGS.name, token, TOKEN_CONFIGS.options)
-
-    res.send({ message: "User created successfully", user }).status(201)
+    res.send({ message: "User created successfully", user, token }).status(201)
   } catch (error) {
     res.send({ message: "User creation failed", error }).status(500)
   }
 })
 
 app.get("/users/me", async (req, res) => {
-  // const token = req.cookies[TOKEN_CONFIGS.name]
   const token = req.headers.authorization?.split(" ")[1]
-
-  console.log("token --->", token)
 
   if (!token) {
     res.send({ message: "Token is not provided" }).status(401)
@@ -75,15 +83,18 @@ app.get("/users/me", async (req, res) => {
 
   const payload = await verifyJWT(token)
 
-  console.log("payload --->", payload)
-
   if (!payload) {
     res.send({ message: "Token is invalid" }).status(401)
     return
   }
 
   const user = await prisma.users.findUnique({
-    where: { id: payload?.id }
+    where: { id: payload?.id },
+    select: {
+      id: true,
+      email: true,
+      name: true
+    }
   })
 
   if (!user) {
