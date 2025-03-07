@@ -1,4 +1,5 @@
 import { PrismaClient } from "@prisma/client";
+import { hashPassword } from "./lib/crypto.js";
 
 const prisma = new PrismaClient()
 
@@ -7,7 +8,12 @@ export const seeding = async () => {
 
   try {
     await prisma.users.deleteMany()
-    const mainUser = await prisma.users.create({ data: { name: "FarzadVav", email: "farzadvav@gmail.com" } })
+    const { salt, hash } = hashPassword("root")
+    const mainUser = await prisma.users.create({
+      data: {
+        name: "FarzadVav", email: "farzadvav@gmail.com", password: hash, passwordSalt: salt
+      }
+    })
 
     await prisma.posts.deleteMany()
     const POSTS = [

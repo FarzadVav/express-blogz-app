@@ -17,7 +17,11 @@ export const signJWT = async (payload: JWTUser) => {
 }
 
 export const verifyJWT = async (token: string) => {
-  const { payload } = await jwtVerify(token, SECRET)
-
-  return payload as JWTUser | null
+  try {
+    const { payload } = await jwtVerify(token, SECRET)
+    return payload as JWTUser
+  } catch (error) {
+    console.error("Unknown error while verifying JWT --->", error)
+    return null
+  }
 }
