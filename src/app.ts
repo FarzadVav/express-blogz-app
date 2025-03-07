@@ -30,24 +30,32 @@ app.post("/users", async (req, res) => {
   const errors = zodValidation(createUserSchema, req.body)
 
   if (errors) {
-    res.send({ message: "Validation errors", errors }).status(400)
+    res.status(400).send({ message: "Validation errors", errors })
     return
   }
 
   try {
-    const isUserExists = await prisma.users.findUnique({
-      where: { email }
+    const prevUser = await prisma.users.findUnique({
+      where: { email },
+      select: { id: true, email: true, name: true, password: true, passwordSalt: true }
     })
 
-    if (isUserExists) {
-      const passwordMatch = verifyPassword(password, isUserExists.password, isUserExists.passwordSalt)
+    if (prevUser) {
+      const passwordMatch = verifyPassword(password, prevUser.password, prevUser.passwordSalt)
 
       if (!passwordMatch) {
-        res.send({ message: "Invalid password" }).status(400)
+        res.status(400).send({ message: "Invalid password" })
         return
       }
 
-      res.send({ message: "User already exists", user: isUserExists }).status(400)
+      const token = await signJWT({ id: prevUser.id })
+      const currentUser = {
+        id: prevUser.id,
+        email: prevUser.email,
+        name: prevUser.name
+      }
+
+      res.send({ message: "User logged in successfully", user: currentUser, token })
       return
     }
 
@@ -67,9 +75,9 @@ app.post("/users", async (req, res) => {
 
     const token = await signJWT({ id: user.id })
 
-    res.send({ message: "User created successfully", user, token }).status(201)
+    res.status(201).send({ message: "User created successfully", user, token })
   } catch (error) {
-    res.send({ message: "User creation failed", error }).status(500)
+    res.status(500).send({ message: "User creation failed", error })
   }
 })
 
@@ -77,14 +85,14 @@ app.get("/users/me", async (req, res) => {
   const token = req.headers.authorization?.split(" ")[1]
 
   if (!token) {
-    res.send({ message: "Token is not provided" }).status(401)
+    res.status(401).send({ message: "Token is not provided" })
     return
   }
 
   const payload = await verifyJWT(token)
 
   if (!payload) {
-    res.send({ message: "Token is invalid" }).status(401)
+    res.status(401).send({ message: "Token is invalid" })
     return
   }
 
@@ -98,11 +106,11 @@ app.get("/users/me", async (req, res) => {
   })
 
   if (!user) {
-    res.send({ message: "User not found" }).status(404)
+    res.status(404).send({ message: "User not found" })
     return
   }
 
-  res.send({ message: "User found", user }).status(200)
+  res.send({ message: "User found", user })
 })
 
 // Application running
