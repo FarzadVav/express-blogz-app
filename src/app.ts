@@ -3,6 +3,7 @@ import express from "express";
 import cookieParser from "cookie-parser";
 
 import prisma from "./lib/db.js";
+import { hashPassword } from "./lib/crypto.js";
 import { zodValidation } from "./lib/zodValidation.js";
 import { createUserSchema } from "./lib/zodSchemas.js";
 
@@ -19,7 +20,7 @@ app.get("/", (_, res) => {
 })
 
 app.post("/users", async (req, res) => {
-  const { email, name } = req.body
+  const { email, password, name } = req.body
 
   const errors = zodValidation(createUserSchema, req.body)
 
@@ -29,9 +30,13 @@ app.post("/users", async (req, res) => {
   }
 
   try {
+    const { salt, hash } = hashPassword(password)
+
     const user = await prisma.users.create({
       data: {
         email,
+        password: hash,
+        passwordSalt: salt,
         name
       }
     })
