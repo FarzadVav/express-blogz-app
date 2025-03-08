@@ -73,7 +73,7 @@ authRouter.post("/users", async (req, res) => {
   }
 })
 
-authRouter.patch("/users", authMiddleware, async (req, res) => {
+authRouter.put("/users", authMiddleware, async (req, res) => {
   const user = req.user
   const { name, email, password } = req.body
 
