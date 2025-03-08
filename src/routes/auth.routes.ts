@@ -72,4 +72,16 @@ authRouter.get("/users/me", authMiddleware, async (req, res) => {
   res.send({ message: "User found", user })
 })
 
+authRouter.delete("/users", authMiddleware, async (req, res) => {
+  const user = req.user
+
+  try {
+    await prisma.users.delete({ where: { id: user.id } })
+
+    res.send({ message: "User deleted successfully" })
+  } catch (error) {
+    res.status(500).send({ message: "User deletion failed", error })
+  }
+})
+
 export default authRouter
