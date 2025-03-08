@@ -1,13 +1,20 @@
-import { Router } from "express"
+import { Router } from "express";
 
-import prisma from "../lib/db.js"
-import { signJWT } from "../lib/jose.js"
-import { zodValidation } from "../lib/zodValidation.js"
-import { createUserSchema } from "../lib/zodSchemas.js"
-import { hashPassword, verifyPassword } from "../lib/crypto.js"
-import { authMiddleware } from "../middlewares/auth.middlewares.js"
+import prisma from "../lib/db.js";
+import { signJWT } from "../lib/jose.js";
+import { zodValidation } from "../lib/zodValidation.js";
+import { pickedUserFields } from "../utils/users.utils.js";
+import { hashPassword, verifyPassword } from "../lib/crypto.js";
+import { authMiddleware } from "../middlewares/auth.middlewares.js";
+import { createUserSchema, updateUserSchema } from "../lib/zodSchemas.js";
 
 const authRouter = Router()
+
+authRouter.get("/users/me", authMiddleware, async (req, res) => {
+  const user = req.user
+
+  res.send({ message: "User found", user: pickedUserFields(user) })
+})
 
 authRouter.post("/users", async (req, res) => {
   const { email, password } = req.body
@@ -66,10 +73,29 @@ authRouter.post("/users", async (req, res) => {
   }
 })
 
-authRouter.get("/users/me", authMiddleware, async (req, res) => {
+authRouter.patch("/users", authMiddleware, async (req, res) => {
   const user = req.user
+  const { name, email, password } = req.body
 
-  res.send({ message: "User found", user })
+  const errors = zodValidation(updateUserSchema, req.body)
+
+  if (errors) {
+    res.status(400).send({ message: "Validation errors", errors })
+    return
+  }
+
+  try {
+    const { salt, hash } = hashPassword(password)
+
+    const updatedUser = await prisma.users.update({
+      where: { id: user.id },
+      data: { name, email, password: hash, passwordSalt: salt }
+    })
+
+    res.send({ message: "User updated successfully", user: pickedUserFields(updatedUser) })
+  } catch (error) {
+    res.status(500).send({ message: "User update failed", error })
+  }
 })
 
 authRouter.delete("/users", authMiddleware, async (req, res) => {
