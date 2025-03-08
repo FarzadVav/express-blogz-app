@@ -1,6 +1,7 @@
 import dotenv from "dotenv";
 import helmet from "helmet";
 import express from "express";
+import compression from "compression";
 import cookieParser from "cookie-parser";
 
 import authRouter from "./routes/auth.routes.js";
@@ -11,10 +12,11 @@ const PORT = process.env.PORT
 const app = express()
 
 // --- Express app
+app.disable("x-powered-by")
 app.use(express.json())
 app.use(cookieParser())
 app.use(helmet())
-app.disable("x-powered-by")
+app.use(compression())
 
 /* Welcome route */
 app.get("/", (_, res) => {
