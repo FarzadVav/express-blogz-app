@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "tsx ./src/app.ts",
-    "build": "tsc",
+    "build": "rm -rf dist && tsc",
     "start": "node ./dist/app.js"
   },
   "devDependencies": {
