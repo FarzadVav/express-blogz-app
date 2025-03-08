@@ -4,8 +4,8 @@ import prisma from "../lib/db.js";
 import { signJWT } from "../lib/jose.js";
 import { zodValidation } from "../lib/zodValidation.js";
 import { pickedUserFields } from "../utils/users.utils.js";
-import { hashPassword, verifyPassword } from "../utils/crypto.utils.js";
 import { authMiddleware } from "../middlewares/auth.middlewares.js";
+import { hashPassword, verifyPassword } from "../utils/crypto.utils.js";
 import { createUserSchema, updateUserSchema } from "../lib/zodSchemas.js";
 
 const authRouter = Router()
