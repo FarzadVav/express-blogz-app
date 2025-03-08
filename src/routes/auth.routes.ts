@@ -11,7 +11,7 @@ import { createUserSchema, updateUserSchema } from "../lib/zodSchemas.js";
 const authRouter = Router()
 
 authRouter.post("/", async (req, res) => {
-  const { email, password } = req.body
+  const { email, password, name } = req.body
 
   const errors = zodValidation(createUserSchema, req.body)
 
@@ -22,8 +22,7 @@ authRouter.post("/", async (req, res) => {
 
   try {
     const prevUser = await prisma.users.findUnique({
-      where: { email },
-      select: { id: true, email: true, name: true, password: true, passwordSalt: true }
+      where: { email }
     })
 
     if (prevUser) {
@@ -35,13 +34,8 @@ authRouter.post("/", async (req, res) => {
       }
 
       const token = await signJWT({ id: prevUser.id })
-      const currentUser = {
-        id: prevUser.id,
-        email: prevUser.email,
-        name: prevUser.name
-      }
 
-      res.send({ message: "User logged in successfully", user: currentUser, token })
+      res.send({ message: "User logged in successfully", user: pickedUserFields(prevUser), token })
       return
     }
 
@@ -49,19 +43,15 @@ authRouter.post("/", async (req, res) => {
     const user = await prisma.users.create({
       data: {
         email,
+        name,
         password: hash,
-        passwordSalt: salt,
-      },
-      select: {
-        id: true,
-        email: true,
-        name: true
+        passwordSalt: salt
       }
     })
 
     const token = await signJWT({ id: user.id })
 
-    res.status(201).send({ message: "User created successfully", user, token })
+    res.status(201).send({ message: "User created successfully", user: pickedUserFields(user), token })
   } catch (error) {
     res.status(500).send({ message: "User creation failed", error })
   }
