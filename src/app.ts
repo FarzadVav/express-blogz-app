@@ -5,7 +5,7 @@ import compression from "compression";
 import cookieParser from "cookie-parser";
 
 import authRouter from "./routes/auth.routes.js";
-
+import postsRouter from "./routes/posts.routes.js";
 // --- Definitions
 dotenv.config()
 const PORT = process.env.PORT
@@ -25,6 +25,9 @@ app.get("/", (_, res) => {
 
 /* Auth routes */
 app.use("/auth", authRouter)
+
+/* Posts routes */
+app.use("/posts", postsRouter)
 
 /* 404 handler */
 app.use((_, res) => {

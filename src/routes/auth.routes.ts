@@ -10,13 +10,7 @@ import { createUserSchema, updateUserSchema } from "../lib/zodSchemas.js";
 
 const authRouter = Router()
 
-authRouter.get("/users/me", authMiddleware, async (req, res) => {
-  const user = req.user
-
-  res.send({ message: "User found", user: pickedUserFields(user) })
-})
-
-authRouter.post("/users", async (req, res) => {
+authRouter.post("/", async (req, res) => {
   const { email, password } = req.body
 
   const errors = zodValidation(createUserSchema, req.body)
@@ -73,7 +67,7 @@ authRouter.post("/users", async (req, res) => {
   }
 })
 
-authRouter.put("/users", authMiddleware, async (req, res) => {
+authRouter.put("/", authMiddleware, async (req, res) => {
   const user = req.user
   const { name, email, password } = req.body
 
@@ -98,7 +92,7 @@ authRouter.put("/users", authMiddleware, async (req, res) => {
   }
 })
 
-authRouter.delete("/users", authMiddleware, async (req, res) => {
+authRouter.delete("/", authMiddleware, async (req, res) => {
   const user = req.user
 
   try {
@@ -108,6 +102,12 @@ authRouter.delete("/users", authMiddleware, async (req, res) => {
   } catch (error) {
     res.status(500).send({ message: "User deletion failed", error })
   }
+})
+
+authRouter.get("/", authMiddleware, async (req, res) => {
+  const user = req.user
+
+  res.send({ message: "User found", user: pickedUserFields(user) })
 })
 
 export default authRouter
