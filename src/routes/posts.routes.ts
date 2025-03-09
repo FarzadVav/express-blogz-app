@@ -4,27 +4,19 @@ import prisma from "../lib/db.js";
 import { zodValidation } from "../lib/zodValidation.js";
 import { createPostSchema } from "../lib/zodSchemas.js";
 import { authMiddleware } from "../middlewares/auth.middlewares.js";
+import { createPost, deletePost, getPostById, getPosts, updatePost } from "../controllers/posts.controllers.js";
 
 const postsRouter = Router()
 
 postsRouter.route("/")
   // Get all posts
   .get(async (_, res) => {
-    const posts = await prisma.posts.findMany({
-      include: {
-        author: {
-          select: { id: true, name: true }
-        }
-      }
-    })
+    const posts = await getPosts()
 
     res.json(posts)
   })
   // Create a new post
   .post(authMiddleware, async (req, res) => {
-    const { title, content } = req.body
-    const user = req.user
-
     const errors = zodValidation(createPostSchema, req.body)
 
     if (errors) {
@@ -33,9 +25,7 @@ postsRouter.route("/")
     }
 
     try {
-      const post = await prisma.posts.create({
-        data: { title, content, authorId: user.id }
-      })
+      const post = await createPost(req)
 
       res.status(201).json(post)
     } catch (error) {
@@ -46,17 +36,8 @@ postsRouter.route("/")
 postsRouter.route("/:id")
   // Get a post by id
   .get(async (req, res) => {
-    const { id } = req.params
-
     try {
-      const post = await prisma.posts.findUnique({
-        where: { id: +id },
-        include: {
-          author: {
-            select: { id: true, name: true }
-          }
-        }
-      })
+      const post = await getPostById(req)
 
       if (!post) {
         res.status(404).json({ message: "Post not found" })
@@ -70,9 +51,6 @@ postsRouter.route("/:id")
   })
   // Update a post by id
   .put(authMiddleware, async (req, res) => {
-    const { id } = req.params
-    const { title, content } = req.body
-
     const errors = zodValidation(createPostSchema, req.body)
 
     if (errors) {
@@ -81,10 +59,7 @@ postsRouter.route("/:id")
     }
 
     try {
-      const post = await prisma.posts.update({
-        where: { id: +id },
-        data: { title, content }
-      })
+      const post = await updatePost(req)
 
       res.json(post)
     } catch (error) {
@@ -93,10 +68,8 @@ postsRouter.route("/:id")
   })
   // Delete a post by id
   .delete(authMiddleware, async (req, res) => {
-    const { id } = req.params
-
     try {
-      await prisma.posts.delete({ where: { id: +id } })
+      await deletePost(req)
 
       res.json({ message: "Post deleted successfully" })
     } catch (error) {
