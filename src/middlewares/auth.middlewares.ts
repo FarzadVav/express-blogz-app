@@ -1,7 +1,7 @@
 import { NextFunction, Request, Response } from "express"
 
-import prisma from "../lib/db.js"
 import { verifyJWT } from "../lib/jose.js"
+import { getUser } from "../controllers/auth.controllers.js"
 
 export const authMiddleware = async (req: Request, res: Response, next: NextFunction) => {
   const token = req.headers.authorization?.split(" ")[1]
@@ -18,9 +18,7 @@ export const authMiddleware = async (req: Request, res: Response, next: NextFunc
     return
   }
 
-  const user = await prisma.users.findUnique({
-    where: { id: payload?.id }
-  })
+  const user = await getUser(payload.id)
 
   if (!user) {
     res.status(404).send({ message: "User not found" })

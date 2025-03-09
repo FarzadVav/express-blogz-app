@@ -3,17 +3,18 @@ import { Router } from "express";
 import prisma from "../lib/db.js";
 import { signJWT } from "../lib/jose.js";
 import { zodValidation } from "../lib/zodValidation.js";
+import { verifyPassword } from "../utils/crypto.utils.js";
 import { pickedUserFields } from "../utils/users.utils.js";
 import { authMiddleware } from "../middlewares/auth.middlewares.js";
-import { hashPassword, verifyPassword } from "../utils/crypto.utils.js";
 import { createUserSchema, updateUserSchema } from "../lib/zodSchemas.js";
+import { createUser, updateUser, deleteUser } from "../controllers/auth.controllers.js";
 
 const authRouter = Router()
 
 authRouter.route("/")
   // Register a new user
   .post(async (req, res) => {
-    const { email, password, name } = req.body
+    const { email, password } = req.body
 
     const errors = zodValidation(createUserSchema, req.body)
 
@@ -41,15 +42,7 @@ authRouter.route("/")
         return
       }
 
-      const { salt, hash } = hashPassword(password)
-      const user = await prisma.users.create({
-        data: {
-          email,
-          name,
-          password: hash,
-          passwordSalt: salt
-        }
-      })
+      const user = await createUser(req)
 
       const token = await signJWT({ id: user.id })
 
@@ -60,9 +53,6 @@ authRouter.route("/")
   })
   // Update user details
   .put(authMiddleware, async (req, res) => {
-    const user = req.user
-    const { name, email, password } = req.body
-
     const errors = zodValidation(updateUserSchema, req.body)
 
     if (errors) {
@@ -71,12 +61,7 @@ authRouter.route("/")
     }
 
     try {
-      const { salt, hash } = hashPassword(password)
-
-      const updatedUser = await prisma.users.update({
-        where: { id: user.id },
-        data: { name, email, password: hash, passwordSalt: salt }
-      })
+      const updatedUser = await updateUser(req)
 
       res.send({ message: "User updated successfully", user: pickedUserFields(updatedUser) })
     } catch (error) {
@@ -85,10 +70,8 @@ authRouter.route("/")
   })
   // Delete user account
   .delete(authMiddleware, async (req, res) => {
-    const user = req.user
-
     try {
-      await prisma.users.delete({ where: { id: user.id } })
+      await deleteUser(req)
 
       res.send({ message: "User deleted successfully" })
     } catch (error) {
