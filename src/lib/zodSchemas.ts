@@ -10,3 +10,8 @@ export const updateUserSchema = z.object({
   email: z.string().email().optional(),
   password: z.string().min(8).optional()
 });
+
+export const createPostSchema = z.object({
+  title: z.string().min(1),
+  content: z.string().min(1)
+});

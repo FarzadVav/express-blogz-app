@@ -9,95 +9,91 @@ import { hashPassword, verifyPassword } from "../utils/crypto.utils.js";
 import { createUserSchema, updateUserSchema } from "../lib/zodSchemas.js";
 
 const authRouter = Router()
+  .post("/", async (req, res) => {
+    const { email, password, name } = req.body
 
-authRouter.post("/", async (req, res) => {
-  const { email, password, name } = req.body
+    const errors = zodValidation(createUserSchema, req.body)
 
-  const errors = zodValidation(createUserSchema, req.body)
-
-  if (errors) {
-    res.status(400).send({ message: "Validation errors", errors })
-    return
-  }
-
-  try {
-    const prevUser = await prisma.users.findUnique({
-      where: { email }
-    })
-
-    if (prevUser) {
-      const passwordMatch = verifyPassword(password, prevUser.password, prevUser.passwordSalt)
-
-      if (!passwordMatch) {
-        res.status(400).send({ message: "Invalid password" })
-        return
-      }
-
-      const token = await signJWT({ id: prevUser.id })
-
-      res.send({ message: "User logged in successfully", user: pickedUserFields(prevUser), token })
+    if (errors) {
+      res.status(400).send({ message: "Validation errors", errors })
       return
     }
 
-    const { salt, hash } = hashPassword(password)
-    const user = await prisma.users.create({
-      data: {
-        email,
-        name,
-        password: hash,
-        passwordSalt: salt
+    try {
+      const prevUser = await prisma.users.findUnique({
+        where: { email }
+      })
+
+      if (prevUser) {
+        const passwordMatch = verifyPassword(password, prevUser.password, prevUser.passwordSalt)
+
+        if (!passwordMatch) {
+          res.status(400).send({ message: "Invalid password" })
+          return
+        }
+
+        const token = await signJWT({ id: prevUser.id })
+
+        res.send({ message: "User logged in successfully", user: pickedUserFields(prevUser), token })
+        return
       }
-    })
 
-    const token = await signJWT({ id: user.id })
+      const { salt, hash } = hashPassword(password)
+      const user = await prisma.users.create({
+        data: {
+          email,
+          name,
+          password: hash,
+          passwordSalt: salt
+        }
+      })
 
-    res.status(201).send({ message: "User created successfully", user: pickedUserFields(user), token })
-  } catch (error) {
-    res.status(500).send({ message: "User creation failed", error })
-  }
-})
+      const token = await signJWT({ id: user.id })
 
-authRouter.put("/", authMiddleware, async (req, res) => {
-  const user = req.user
-  const { name, email, password } = req.body
+      res.status(201).send({ message: "User created successfully", user: pickedUserFields(user), token })
+    } catch (error) {
+      res.status(500).send({ message: "User creation failed", error })
+    }
+  })
+  .put("/", authMiddleware, async (req, res) => {
+    const user = req.user
+    const { name, email, password } = req.body
 
-  const errors = zodValidation(updateUserSchema, req.body)
+    const errors = zodValidation(updateUserSchema, req.body)
 
-  if (errors) {
-    res.status(400).send({ message: "Validation errors", errors })
-    return
-  }
+    if (errors) {
+      res.status(400).send({ message: "Validation errors", errors })
+      return
+    }
 
-  try {
-    const { salt, hash } = hashPassword(password)
+    try {
+      const { salt, hash } = hashPassword(password)
 
-    const updatedUser = await prisma.users.update({
-      where: { id: user.id },
-      data: { name, email, password: hash, passwordSalt: salt }
-    })
+      const updatedUser = await prisma.users.update({
+        where: { id: user.id },
+        data: { name, email, password: hash, passwordSalt: salt }
+      })
 
-    res.send({ message: "User updated successfully", user: pickedUserFields(updatedUser) })
-  } catch (error) {
-    res.status(500).send({ message: "User update failed", error })
-  }
-})
+      res.send({ message: "User updated successfully", user: pickedUserFields(updatedUser) })
+    } catch (error) {
+      res.status(500).send({ message: "User update failed", error })
+    }
+  })
+  .delete("/", authMiddleware, async (req, res) => {
+    const user = req.user
 
-authRouter.delete("/", authMiddleware, async (req, res) => {
-  const user = req.user
+    try {
+      await prisma.users.delete({ where: { id: user.id } })
 
-  try {
-    await prisma.users.delete({ where: { id: user.id } })
+      res.send({ message: "User deleted successfully" })
+    } catch (error) {
+      res.status(500).send({ message: "User deletion failed", error })
+    }
+  })
+  .get("/", authMiddleware, async (req, res) => {
+    const user = req.user
 
-    res.send({ message: "User deleted successfully" })
-  } catch (error) {
-    res.status(500).send({ message: "User deletion failed", error })
-  }
-})
-
-authRouter.get("/", authMiddleware, async (req, res) => {
-  const user = req.user
-
-  res.send({ message: "User found", user: pickedUserFields(user) })
-})
+    res.send({ message: "User found", user: pickedUserFields(user) })
+  })
 
 export default authRouter
