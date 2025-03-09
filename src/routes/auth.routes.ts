@@ -9,7 +9,10 @@ import { hashPassword, verifyPassword } from "../utils/crypto.utils.js";
 import { createUserSchema, updateUserSchema } from "../lib/zodSchemas.js";
 
 const authRouter = Router()
-  .post("/", async (req, res) => {
+
+authRouter.route("/")
+  // Register a new user
+  .post(async (req, res) => {
     const { email, password, name } = req.body
 
     const errors = zodValidation(createUserSchema, req.body)
@@ -55,7 +58,8 @@ const authRouter = Router()
       res.status(500).send({ message: "User creation failed", error })
     }
   })
-  .put("/", authMiddleware, async (req, res) => {
+  // Update user details
+  .put(authMiddleware, async (req, res) => {
     const user = req.user
     const { name, email, password } = req.body
 
@@ -79,7 +83,8 @@ const authRouter = Router()
       res.status(500).send({ message: "User update failed", error })
     }
   })
-  .delete("/", authMiddleware, async (req, res) => {
+  // Delete user account
+  .delete(authMiddleware, async (req, res) => {
     const user = req.user
 
     try {
@@ -90,7 +95,8 @@ const authRouter = Router()
       res.status(500).send({ message: "User deletion failed", error })
     }
   })
-  .get("/", authMiddleware, async (req, res) => {
+  // Get user details
+  .get(authMiddleware, async (req, res) => {
     const user = req.user
 
     res.send({ message: "User found", user: pickedUserFields(user) })

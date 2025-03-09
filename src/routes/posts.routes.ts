@@ -1,14 +1,15 @@
 import { Router } from "express";
 
 import prisma from "../lib/db.js";
-import { authMiddleware } from "../middlewares/auth.middlewares.js";
 import { zodValidation } from "../lib/zodValidation.js";
 import { createPostSchema } from "../lib/zodSchemas.js";
+import { authMiddleware } from "../middlewares/auth.middlewares.js";
 
 const postsRouter = Router()
 
-postsRouter
-  .get("/", async (_, res) => {
+postsRouter.route("/")
+  // Get all posts
+  .get(async (_, res) => {
     const posts = await prisma.posts.findMany({
       include: {
         author: {
@@ -19,7 +20,8 @@ postsRouter
 
     res.json(posts)
   })
-  .post("/", authMiddleware, async (req, res) => {
+  // Create a new post
+  .post(authMiddleware, async (req, res) => {
     const { title, content } = req.body
     const user = req.user
 
@@ -41,8 +43,9 @@ postsRouter
     }
   })
 
-postsRouter
-  .get("/:id", async (req, res) => {
+postsRouter.route("/:id")
+  // Get a post by id
+  .get(async (req, res) => {
     const { id } = req.params
 
     try {
@@ -65,7 +68,8 @@ postsRouter
       res.status(500).json({ message: "Internal server error" })
     }
   })
-  .put("/:id", authMiddleware, async (req, res) => {
+  // Update a post by id
+  .put(authMiddleware, async (req, res) => {
     const { id } = req.params
     const { title, content } = req.body
 
@@ -87,7 +91,8 @@ postsRouter
       res.status(500).json({ message: "Internal server error" })
     }
   })
-  .delete("/:id", authMiddleware, async (req, res) => {
+  // Delete a post by id
+  .delete(authMiddleware, async (req, res) => {
     const { id } = req.params
 
     try {
