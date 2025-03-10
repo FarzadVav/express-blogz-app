@@ -1,4 +1,5 @@
 import { Request } from "express";
+
 import prisma from "../lib/db.js";
 
 export const getPosts = async () => {
@@ -33,7 +34,11 @@ export const createPost = async (req: Request) => {
   const user = req.user
 
   const post = await prisma.posts.create({
-    data: { title, content, authorId: user.id }
+    data: {
+      title,
+      content,
+      authorId: user.id
+    }
   })
 
   return post

@@ -1,9 +1,9 @@
 import { Router } from "express";
 
-import prisma from "../lib/db.js";
 import { zodValidation } from "../lib/zodValidation.js";
 import { createPostSchema } from "../lib/zodSchemas.js";
 import { authMiddleware } from "../middlewares/auth.middlewares.js";
+import { createPostMiddleware } from "../middlewares/posts.middlewares.js";
 import { createPost, deletePost, getPostById, getPosts, updatePost } from "../controllers/posts.controllers.js";
 
 const postsRouter = Router()
@@ -16,14 +16,7 @@ postsRouter.route("/")
     res.json(posts)
   })
   // Create a new post
-  .post(authMiddleware, async (req, res) => {
-    const errors = zodValidation(createPostSchema, req.body)
-
-    if (errors) {
-      res.status(400).send({ message: "Validation errors", errors })
-      return
-    }
-
+  .post(authMiddleware, createPostMiddleware, async (req, res) => {
     try {
       const post = await createPost(req)
 
