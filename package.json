@@ -7,7 +7,8 @@
     "dev": "tsx ./src/app.ts",
     "build": "rm -rf dist && tsc",
     "start": "node ./dist/app.js",
-    "studio": "prisma studio --schema=./src/prisma/schema.prisma"
+    "studio": "prisma studio --schema=./src/prisma/schema.prisma",
+    "db:push": "prisma db push --schema=./src/prisma/schema.prisma"
   },
   "dependencies": {
     "@prisma/client": "^6.4.1",

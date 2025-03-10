@@ -14,13 +14,25 @@ model Users {
   passwordSalt String
   name         String?
   posts        Posts[]
+
+  @@index([email])
 }
 
 model Posts {
-  id        Int     @id @default(autoincrement())
-  title     String
-  content   String? @db.Text
-  published Boolean @default(false)
-  author    Users   @relation(fields: [authorId], references: [id])
-  authorId  Int
+  id         Int          @id @default(autoincrement())
+  title      String       @unique
+  content    String       @db.Text
+  published  Boolean      @default(false)
+  author     Users        @relation(fields: [authorId], references: [id])
+  authorId   Int
+  thumbnails Thumbnails[]
+
+  @@index([title])
+}
+
+model Thumbnails {
+  id     String @id @default(uuid())
+  path   String
+  postId Int
+  post   Posts  @relation(fields: [postId], references: [id])
 }
